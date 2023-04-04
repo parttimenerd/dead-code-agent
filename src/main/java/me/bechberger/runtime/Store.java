@@ -199,9 +199,6 @@ public class Store {
             }
         };
         handler.accept(classEntry);
-        if (className.startsWith("org.springframework.boot.loader.archive.Archive")) {
-            System.out.println("Class " + className + " used " + klassOrNull);
-        }
         if (klassOrNull == null) {
             setStateOfInterfaces(classEntry, State.USED, handler);
         } else {
