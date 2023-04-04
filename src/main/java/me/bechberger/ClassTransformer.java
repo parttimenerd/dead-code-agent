@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
 
 /**
  * class transformer to add code in static initializer. Cannot be used for retransformations
@@ -28,15 +27,13 @@ public class ClassTransformer implements ClassFileTransformer {
             }
         });
         // store the data on shutdown
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            Store.getInstance().writeTo(options.getOutput().map(f -> {
-                try {
-                    return Files.newOutputStream(f);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }).orElse(System.err));
-        }));
+        Store.getInstance().setStoreStream(options.getOutput().map(f -> {
+            try {
+                return Files.newOutputStream(f);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }).orElse(System.err));
     }
 
     @Override
@@ -65,7 +62,7 @@ public class ClassTransformer implements ClassFileTransformer {
     private void transform(String className, CtClass cc) throws CannotCompileException, NotFoundException {
         String cn = formatClassName(className);
         Store.getInstance().processClassLoad(cn, cc.getClassFile().getInterfaces());
-        cc.makeClassInitializer().insertAfter(String.format("me.bechberger.runtime.Store.getInstance()" +
+        cc.makeClassInitializer().insertBefore(String.format("me.bechberger.runtime.Store.getInstance()" +
                 ".processClassUsage(\"%s\");", cn));
     }
 

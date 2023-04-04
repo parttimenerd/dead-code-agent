@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 public class Store {
 
-    enum State {
+    public enum State {
         NOT_LOADED("n"), LOADED("l"), USED("u");
 
         public final String prefix;
@@ -97,6 +97,26 @@ public class Store {
     private final ConcurrentHashMap<String, Entry> classes = new ConcurrentHashMap<>();
     private final List<Entry> multiClassEntries = new ArrayList<>();
 
+    private OutputStream storeStream = null;
+
+    public Store() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (storeStream != null) {
+                Store.getInstance().writeTo(storeStream);
+            }
+        }));
+    }
+
+    public void setStoreStream(OutputStream storeStream) {
+        this.storeStream = storeStream;
+    }
+
+    public void setStorePathIfNotNull(String storePath) throws IOException {
+        if (storeStream == null) {
+            setStoreStream(Files.newOutputStream(Path.of(storePath)));
+        }
+    }
+
     public Store load(Path file) throws IOException {
         return load(file, false);
     }
@@ -165,6 +185,9 @@ public class Store {
     }
 
     public void processClassUsage(String className) {
+        processClassUsage(className, null);
+    }
+    public void processClassUsage(String className, Class<?> klassOrNull) {
         Entry classEntry = get(className);
 
         Consumer<Entry> handler = (entry) -> {
@@ -176,7 +199,28 @@ public class Store {
             }
         };
         handler.accept(classEntry);
-        setStateOfInterfaces(classEntry, State.USED, handler);
+        if (className.startsWith("org.springframework.boot.loader.archive.Archive")) {
+            System.out.println("Class " + className + " used " + klassOrNull);
+        }
+        if (klassOrNull == null) {
+            setStateOfInterfaces(classEntry, State.USED, handler);
+        } else {
+            setStateOfInterfaces(klassOrNull, State.USED, handler);
+        }
+    }
+
+    private void setStateOfInterfaces(Class<?> klass, State state, Consumer<Entry> handler) {
+
+        for (Class<?> ifaceClass : klass.getInterfaces()) {
+            String iface = ifaceClass.getName();
+            Entry ifaceEntry = get(iface);
+            if (ifaceEntry.getState().isLarger(State.USED)) {
+                continue;
+            }
+            ifaceEntry.setState(State.USED);
+            handler.accept(ifaceEntry);
+            setStateOfInterfaces(ifaceClass, state, handler);
+        }
     }
 
     public boolean shouldRemove(String className) {
@@ -193,6 +237,10 @@ public class Store {
 
     public boolean isClassMarkedForDeletion(String className) {
         return classes.containsKey(className) && classes.get(className).delete;
+    }
+
+    public String getDeletionMessage(String className) {
+        return classes.containsKey(className) ? classes.get(className).reportMessage : "";
     }
 
     public Set<String> getUsedClasses() {

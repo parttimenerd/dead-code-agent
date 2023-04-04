@@ -85,15 +85,31 @@ public class Processor implements Runnable {
         libraries.used.stream().sorted().forEach(System.out::println);
     }
 
-    @Command(name = "reduceJAR", description = "Reduce a JAR file by removing all unused libraries and classes and " +
-            "classes marked for deletion")
+    @Command(name = "instrumentUnusedClasses", description = "Instrument all unused classes to add an alert (or System.exit(1) depending on the options)")
+    public void instrumentUnusedClasses(@Parameters(index = "0", paramLabel = "JAR") Path jar, @Parameters(index = "1", paramLabel
+            = "OUTPUT_JAR") Path output, @Option(names = "--exit", description = "add System.exit(1) to every unused class") boolean exit) throws IOException {
+        Store store = new Store().load(input);
+        ClassAndLibraryTransformer clr =
+                new ClassAndLibraryTransformer(jar, Files.newOutputStream(output)).withClassTransformer(ClassAndLibraryTransformer.createUnusedClassTransformer((cn) -> store.isClassUsed(cn) && !store.isClassMarkedForDeletion(cn), store::getDeletionMessage, exit));
+        clr.process();
+    }
+
+    @Command(name = "instrument", description = "Instrument all classes to store information about which classes are loaded and used")
+    public void instrument(@Parameters(index = "0", paramLabel = "JAR") Path jar, @Parameters(index = "1", paramLabel
+            = "OUTPUT_JAR") Path output, @Option(names = "--exit", description = "add System.exit(1) to every unused class") boolean exit) throws IOException {
+        ClassAndLibraryTransformer clr =
+                new ClassAndLibraryTransformer(jar, Files.newOutputStream(output)).withClassTransformer(ClassAndLibraryTransformer.createClassInstrumenter(input)).withMiscFilesSupplier(ClassAndLibraryTransformer.createStoreClassSupplier());
+        clr.process();
+    }
+
+    @Command(name = "reduceJAR", description = "Remove all unused classes and libraries from the JAR")
     public void reduceJAR(@Parameters(index = "0", paramLabel = "JAR") Path jar, @Parameters(index = "1", paramLabel
             = "OUTPUT_JAR") Path output,
                           @Option(names = "--onlyLibraries") boolean onlyLibraries) throws IOException {
         Store store = new Store().load(input);
-        Libraries libraries = findUsedAndUnusedLibraries(jar, store, true);
-        ClassAndLibraryRemover clr =
-                new ClassAndLibraryRemover(jar, Files.newOutputStream(output)).withLibraryFilter(libraries.used::contains);
+        Libraries libraries = findUsedAndUnusedLibraries(jar, store, false);
+        ClassAndLibraryTransformer clr =
+                new ClassAndLibraryTransformer(jar, Files.newOutputStream(output)).withLibraryFilter(libraries.used::contains);
         if (!onlyLibraries) {
             clr.withClassFilter(c -> store.isClassLoaded(c) && !store.isClassMarkedForDeletion(c));
         }

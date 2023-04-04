@@ -19,4 +19,8 @@ public final class Util {
         return name.substring(0, name.length() - 6).replace('/', '.').replace("BOOT-INF.classes.", "");
     }
 
+    public static boolean isIgnoredClassName(String name) {
+        String normalized = name.replace('/', '.');
+        return normalized.endsWith("package-info") || normalized.endsWith("module-info");
+    }
 }
