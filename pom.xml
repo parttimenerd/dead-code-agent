@@ -27,7 +27,6 @@
                     <archive>
                         <manifestEntries>
                             <Main-Class>me.bechberger.Main</Main-Class>
-                            <Agent-Class>me.bechberger.Main</Agent-Class>
                             <Premain-Class>me.bechberger.Main</Premain-Class>
                             <Can-Redefine-Classes>true</Can-Redefine-Classes>
                             <Can-Retransform-Classes>true</Can-Retransform-Classes>

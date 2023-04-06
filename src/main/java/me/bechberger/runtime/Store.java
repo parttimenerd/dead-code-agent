@@ -77,11 +77,11 @@ public class Store {
 
         @Override
         public String toString() {
-            return prefix() + " " + className + " " + reportMessage;
+            return prefix() + " " + className + (reportMessage.isBlank() ? "": " " + reportMessage);
         }
 
         public static Entry parse(String line) {
-            String[] parts = line.split(" ");
+            String[] parts = line.split(" ", 3);
             String prefix = parts[0];
             String className = parts[1];
             return new Entry(className, State.parse(prefix), prefix.contains("r"), prefix.contains("d"),

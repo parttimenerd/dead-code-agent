@@ -15,9 +15,6 @@ import java.util.jar.JarFile;
  * Agent entry and CLI
  */
 public class Main {
-    public static void agentmain(String agentArgs, Instrumentation inst) {
-        premain(agentArgs, inst);
-    }
 
     public static void premain(String agentArgs, Instrumentation inst) {
         AgentOptions options = new AgentOptions(agentArgs);

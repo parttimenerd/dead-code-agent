@@ -3,6 +3,7 @@ package me.bechberger.processor;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.NotFoundException;
 import javassist.scopedpool.ScopedClassPoolFactoryImpl;
 import javassist.scopedpool.ScopedClassPoolRepositoryImpl;
 import me.bechberger.runtime.Store;
@@ -183,11 +184,10 @@ public class ClassAndLibraryTransformer {
         newJarEntry.setCrc(crc32.getValue());
         jarOutputStream.putNextEntry(newJarEntry);
         Files.copy(newJarFile, jarOutputStream);
-        tempFile.toFile().delete();
     }
 
     public static BiConsumer<ClassPool, CtClass> createUnusedClassTransformer(Predicate<String> isClassUsed, Function<String, String> messageSupplier, boolean exit) {
-        return (cp, cc) -> {
+        return (ClassPool cp, CtClass cc) -> {
             String className = cc.getName();
             if (isClassUsed.test(className)) {
                 return;
