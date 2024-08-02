@@ -13,7 +13,7 @@ being [javassist](http://www.javassist.org/) for the bytecode processing
 (and [picocli](https://picocli.info/) for CLI parsing).
 
 You can find more detailed information in the accompanying blog post:
-[Instrumenting Java Code to Find and Handle Unused Classes](https://mostlynerdless.de/blog/2023/04/05/instrumenting-java-code-to-find-and-handle-unused-classes/)(opens in new tab))
+[Instrumenting Java Code to Find and Handle Unused Classes](https://mostlynerdless.de/blog/2023/04/06/instrumenting-java-code-to-find-and-handle-unused-classes/)(opens in new tab))
 
 Build
 -----
